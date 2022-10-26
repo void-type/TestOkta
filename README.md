@@ -28,3 +28,4 @@ https://developer.okta.com/docs/guides/protect-your-api/main/
 * Get groups on server Identity
 * get user name on server identity
 * make policy for specific group
+* set cookie so MVC works https://developer.okta.com/docs/guides/sign-into-web-app-redirect/asp-net-core-3/main/#get-info-about-the-user
