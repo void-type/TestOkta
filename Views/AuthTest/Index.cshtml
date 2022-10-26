@@ -106,6 +106,12 @@
 
     function logout() {
       oktaSignIn.authClient.signOut();
+
+      // Without these explicit removals, we get logged back in after reload.
+      localStorage.removeItem("okta-cache-storage");
+      localStorage.removeItem("okta-shared-transaction-storage");
+      localStorage.removeItem("okta-token-storage");
+
       location.reload();
     }
   </script>
