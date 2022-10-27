@@ -58,64 +58,70 @@
 
     const oktaSignIn = new OktaSignIn(oktaConfig);
 
-    oktaSignIn.authClient.token.getUserInfo().then((user) => {
-      document.getElementById("messageBox").innerHTML = "Hello, " + user.email + "! You are *still* logged in! :)";
-      document.getElementById("logout").style.display = 'block';
+    oktaSignIn.authClient.token.getUserInfo()
+      .then((user) => {
+          document.getElementById("messageBox")
+            .innerHTML = "Hello, " + user.email + "! You are *still* logged in! :)";
+          document.getElementById("logout")
+            .style.display = 'block';
 
-      // Test the API
-      fetch('/authtest/whoami',
-        {
-          headers: {
-            Authorization: 'Bearer ' + oktaSignIn.authClient.getAccessToken(),
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-        })
-        .then((response) => response.json())
-        .then(function(response) {
+          // Test the API
+          fetch('/authtest/whoami', {
+              headers: {
+                Authorization: 'Bearer ' + oktaSignIn.authClient.getAccessToken(),
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+              },
+            })
+            .then((response) => response.json())
+            .then(function (response) {
 
-          console.log("Available on server:\n" + JSON.stringify(response, null, 2))
+              console.log("Available on server:\n" + JSON.stringify(response, null, 2))
 
-          // Information available on the client
-          oktaSignIn.authClient.tokenManager.getTokens().then(function (tokens) {
+              // Information available on the client
+              oktaSignIn.authClient.tokenManager.getTokens()
+                .then(function (tokens) {
 
-            const claims = tokens.accessToken.claims;
+                  const claims = tokens.accessToken.claims;
 
-            const clientCredentials = {
-              userName: claims.sub,
-              groups: claims.groups
-            }
+                  const clientCredentials = {
+                    userName: claims.sub,
+                    groups: claims.groups
+                  }
 
-          console.log("Available on client:\n" + JSON.stringify(clientCredentials, null, 2))
+                  console.log("Available on client:\n" + JSON.stringify(clientCredentials, null, 2))
 
-          });
+                });
+            });
+
+          // This will 403 if you aren't in the privileged-users group
+          fetch('/authtest/echo?input=helloworld', {
+            headers: {
+              Authorization: 'Bearer ' + oktaSignIn.authClient.getAccessToken(),
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+          })
+
+        },
+        (error) => {
+          oktaSignIn.showSignInToGetTokens({
+              el: '#okta-login-container'
+            })
+            .then(function (tokens) {
+              oktaSignIn.authClient.tokenManager.setTokens(tokens);
+              oktaSignIn.remove();
+
+              const idToken = tokens.idToken;
+              document.getElementById("messageBox")
+                .innerHTML = "Hello, " + idToken.claims.email + "! You just logged in! :)";
+              document.getElementById("logout")
+                .style.display = 'block';
+            })
+            .catch(function (err) {
+              console.error(err);
+            });
         });
-
-        // This will 403 if you aren't in the privileged-users group
-        fetch('/authtest/echo?input=helloworld',
-        {
-          headers: {
-            Authorization: 'Bearer ' + oktaSignIn.authClient.getAccessToken(),
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-        })
-
-      },
-    (error) => {
-      oktaSignIn.showSignInToGetTokens({
-        el: '#okta-login-container'
-      }).then(function (tokens) {
-          oktaSignIn.authClient.tokenManager.setTokens(tokens);
-          oktaSignIn.remove();
-
-          const idToken = tokens.idToken;
-          document.getElementById("messageBox").innerHTML = "Hello, " + idToken.claims.email + "! You just logged in! :)";
-          document.getElementById("logout").style.display = 'block';
-      }).catch(function (err) {
-        console.error(err);
-      });
-    });
 
     function logout() {
       oktaSignIn.authClient.signOut();
