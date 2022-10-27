@@ -15,25 +15,36 @@ namespace OktaTest.Controllers
         }
 
         [Authorize]
+        [HttpGet]
+        [Route("whoami")]
+        public UserInfo GetAuthorized()
+        {
+            if (HttpContext.User.Identity is not ClaimsIdentity principal)
+            {
+                throw new Exception("Identity is not found.");
+            }
+
+            var userName = principal.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            var claims = principal.Claims
+               .GroupBy(claim => claim.Type)
+               .ToDictionary(group => group.Key, group => string.Join(",", group.Select(x => x.Value)));
+
+            var groups = principal.Claims.Where(c => c.Type == "groups").Select(c => c.Value) ?? Enumerable.Empty<string>();
+
+            return new UserInfo(
+                userName,
+                groups
+            );
+        }
+
+        [Authorize("PrivilegedOnly")]
         [Route("echo")]
         public ActionResult<string> Echo(string input)
         {
             return Ok(input);
         }
-
-        [Authorize]
-        [HttpGet]
-        [Route("whoami")]
-        public Dictionary<string, string> GetAuthorized()
-        {
-            if (HttpContext.User.Identity is not ClaimsIdentity principal)
-            {
-                return new();
-            }
-
-            return principal.Claims
-               .GroupBy(claim => claim.Type)
-               .ToDictionary(claim => claim.Key, claim => claim.First().Value);
-        }
     }
+
+    public record UserInfo(string? UserName, IEnumerable<string> Groups);
 }
