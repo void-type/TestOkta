@@ -7,7 +7,7 @@ var config = builder.Configuration;
 
 // Add services to the container.
 services.AddControllersWithViews();
-services.AddOktaAuthentication(config);
+services.AddOktaApiAuthentication(config);
 
 var app = builder.Build();
 

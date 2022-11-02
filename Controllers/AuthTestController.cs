@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace OktaTest.Controllers
 {
-    // TODO: POC for AuthTest. Please remove when you have a React login page.
     [Route("authtest")]
     public class AuthTestController : Controller
     {
@@ -14,6 +13,9 @@ namespace OktaTest.Controllers
             return View();
         }
 
+        /// <summary>
+        /// API endpoint for all authenticated users
+        /// </summary>
         [Authorize]
         [HttpGet]
         [Route("whoami")]
@@ -38,11 +40,24 @@ namespace OktaTest.Controllers
             );
         }
 
+        /// <summary>
+        /// API endpoint for privileged users
+        /// </summary>
         [Authorize("PrivilegedOnly")]
         [Route("echo")]
         public ActionResult<string> Echo(string input)
         {
             return Ok(input);
+        }
+
+        /// <summary>
+        /// Page for privileged users
+        /// </summary>
+        [Authorize("PrivilegedOnly")]
+        [Route("secret")]
+        public ActionResult<string> Secret()
+        {
+            return View();
         }
     }
 

@@ -4,7 +4,10 @@ namespace OktaTest.Auth
 {
     public static class OktaStartupExtensions
     {
-        public static IServiceCollection AddOktaAuthentication(this IServiceCollection services, IConfiguration configuration)
+        /// <summary>
+        /// Used for configuring and setting up Web API auth
+        /// </summary>
+        public static IServiceCollection AddOktaApiAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             services
                 .AddAuthentication(options =>
