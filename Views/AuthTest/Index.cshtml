@@ -12,9 +12,9 @@
 }
 
 @section Styles{
-  <script src="https://global.oktacdn.com/okta-signin-widget/6.7.1/js/okta-sign-in.min.js"
+  <script src="https://global.oktacdn.com/okta-signin-widget/7.0.0/js/okta-sign-in.min.js"
           type="text/javascript"></script>
-  <link href="https://global.oktacdn.com/okta-signin-widget/6.7.1/css/okta-sign-in.min.css" type="text/css"
+  <link href="https://global.oktacdn.com/okta-signin-widget/7.0.0/css/okta-sign-in.min.css" type="text/css"
         rel="stylesheet" />
   <style>
     #okta-login-container main.auth-container {
@@ -32,6 +32,9 @@
 <!-- where the sign-in form appears -->
 <div id="okta-login-container" class="my-5"></div>
 <button id="logout" class="button" onclick="logout()" style="display: none">Logout</button>
+<button id="whoami" class="button" onclick="whoamiApi()" style="display: none">WhoAmI</button>
+<label for="echo-text"></label><input id="echo-text" name="echo-text" style="display: none" type="text" value="helloworld"/>
+<button id="echo" class="button" onclick="echoApi()" style="display: none">echo</button>
 
 @section Scripts {
   <script type="text/javascript">
@@ -41,7 +44,6 @@
       clientId: "@oktaClientId",
       issuer: "@oktaDomain/oauth2/@oktaAuthorizationServerId",
       redirectUri: "@oktaRedirectUri",
-      postLogoutRedirectUri: "@oktaLogoutRedirectUri"
     };
 
     // Search for URL Parameters to see if a user is being routed to the application to recover password
@@ -55,47 +57,7 @@
       .then((user) => {
           document.getElementById("messageBox")
             .innerHTML = "Hello, " + user.email + "! You are *still* logged in! :)";
-          document.getElementById("logout")
-            .style.display = 'block';
-
-          // Test the API
-          fetch('/authtest/whoami', {
-              headers: {
-                Authorization: 'Bearer ' + oktaSignIn.authClient.getAccessToken(),
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-              },
-            })
-            .then((response) => response.json())
-            .then(function (response) {
-
-              console.log("Available on server:\n" + JSON.stringify(response, null, 2))
-
-              // Information available on the client
-              oktaSignIn.authClient.tokenManager.getTokens()
-                .then(function (tokens) {
-
-                  const claims = tokens.accessToken.claims;
-
-                  const clientCredentials = {
-                    userName: claims.sub,
-                    groups: claims.groups
-                  }
-
-                  console.log("Available on client:\n" + JSON.stringify(clientCredentials, null, 2))
-
-                });
-            });
-
-          // This will 403 if you aren't in the privileged-users group
-          fetch('/authtest/echo?input=helloworld', {
-            headers: {
-              Authorization: 'Bearer ' + oktaSignIn.authClient.getAccessToken(),
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-          })
-
+          showButtons();
         },
         (error) => {
           oktaSignIn.showSignInToGetTokens({
@@ -108,18 +70,73 @@
               const idToken = tokens.idToken;
               document.getElementById("messageBox")
                 .innerHTML = "Hello, " + idToken.claims.email + "! You just logged in! :)";
-              document.getElementById("logout")
-                .style.display = 'block';
+              showButtons();
             })
             .catch(function (err) {
               console.error(err);
             });
         });
 
+    function showButtons() {
+      document.getElementById("logout")
+        .style.display = 'block';
+      document.getElementById("whoami")
+        .style.display = 'block';
+      document.getElementById("echo-text")
+        .style.display = 'block';
+      document.getElementById("echo")
+        .style.display = 'block';
+    }
+
     function logout() {
       oktaSignIn.authClient.signOut({
           clearTokensBeforeRedirect: true,
           postLogoutRedirectUri: '@oktaLogoutRedirectUri'
+        });
+    }
+
+    function whoamiApi() {
+      oktaSignIn.authClient.tokenManager.getTokens()
+        .then(function(tokens){
+          // Test the API
+          fetch('/authtest/whoami', {
+              headers: {
+                Authorization: 'Bearer ' + tokens.accessToken.accessToken,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+              },
+            })
+            .then((response) => response.json())
+            .then(function (response) {
+
+              console.log("Available on server:\n" + JSON.stringify(response, null, 2))
+
+              // Information available on the client
+              const claims = tokens.accessToken.claims;
+
+              const clientCredentials = {
+                userName: claims.sub,
+                groups: claims.groups
+              }
+
+              console.log("Available on client:\n" + JSON.stringify(clientCredentials, null, 2))
+            });
+        });
+    }
+
+    function echoApi() {
+      oktaSignIn.authClient.tokenManager.getTokens()
+        .then(function(tokens){
+          // This will 403 if you aren't in the privileged-users group
+          fetch('/authtest/echo?input=' + document.getElementById('echo-text').value, {
+            headers: {
+              Authorization: 'Bearer ' + tokens.accessToken.accessToken,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+          })
+          .then((response) => response.json())
+          .then((response) => console.log(response));
         });
     }
   </script>
